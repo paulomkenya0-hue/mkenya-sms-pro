@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
-import '../models/message.dart';
+import '../models/models.dart';
 import 'chat_screen.dart';
 
 class NewMessageScreen extends StatefulWidget {

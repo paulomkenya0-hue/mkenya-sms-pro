@@ -1,6 +1,6 @@
 import 'package:telephony/telephony.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../models/conversation.dart';
+import '../models/models.dart';
 
 class SmsService {
   static final SmsService _instance = SmsService._internal();

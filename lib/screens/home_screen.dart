@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
-import '../models/message.dart';
+import '../models/models.dart';
 import '../services/sms_service.dart';
 import 'chat_screen.dart';
 import 'settings_screen.dart';

@@ -1,11 +1,6 @@
 import 'package:telephony/telephony.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/conversation.dart';
-import '../models/message.dart';
-
-// ═══════════════════════════════════════════════════════════
-//  MKENYA SMS PRO — SMS Service (Real SMS read/send)
-// ═══════════════════════════════════════════════════════════
 
 class SmsService {
   static final SmsService _instance = SmsService._internal();
@@ -14,7 +9,6 @@ class SmsService {
 
   final Telephony telephony = Telephony.instance;
 
-  // ── Request all permissions ────────────────────────────
   Future<bool> requestPermissions() async {
     final statuses = await [
       Permission.sms,
@@ -24,53 +18,71 @@ class SmsService {
     return statuses.values.every((s) => s.isGranted);
   }
 
-  // ── Load all conversations from device ────────────────
   Future<List<Conversation>> loadConversations() async {
     try {
-      final threads = await telephony.getConversations(
-        filter: ConversationFilter.no,
-        sortOrder: [OrderBy(ConversationProjection.DATE, sort: Sort.DESC)],
+      final inbox = await telephony.getInboxSms(
+        columns: [
+          SmsColumn.ID,
+          SmsColumn.ADDRESS,
+          SmsColumn.BODY,
+          SmsColumn.DATE,
+          SmsColumn.READ,
+          SmsColumn.THREAD_ID,
+        ],
+        sortOrder: [OrderBy(SmsColumn.DATE, sort: Sort.DESC)],
       );
 
-      List<Conversation> convos = [];
-      for (final thread in threads) {
-        final msgs = await loadMessages(thread.threadId.toString());
-        if (msgs.isEmpty) continue;
-        final last = msgs.last;
+      final Map<String, Conversation> threadMap = {};
 
-        convos.add(Conversation(
-          threadId: thread.threadId.toString(),
-          address: thread.snippet ?? '',
-          contactName: null, // filled by ContactService
-          lastMessage: last.body,
-          lastMessageTime: last.date,
-          unreadCount: thread.messageCount ?? 0,
-          messages: msgs,
-        ));
+      for (final sms in inbox) {
+        final threadId = sms.threadId?.toString() ?? sms.address ?? '';
+        final address = sms.address ?? '';
+        final body = sms.body ?? '';
+        final date = DateTime.fromMillisecondsSinceEpoch(sms.date ?? 0);
+        final isRead = (sms.read ?? 0) == 1;
+
+        final message = Message(
+          id: sms.id?.toString() ?? '',
+          body: body,
+          address: address,
+          date: date,
+          isSent: false,
+          isRead: isRead,
+        );
+
+        if (!threadMap.containsKey(threadId)) {
+          threadMap[threadId] = Conversation(
+            threadId: threadId,
+            address: address,
+            lastMessage: body,
+            lastMessageTime: date,
+            unreadCount: isRead ? 0 : 1,
+            messages: [message],
+          );
+        } else {
+          threadMap[threadId]!.messages.add(message);
+          if (!isRead) threadMap[threadId]!.unreadCount++;
+        }
       }
-      return convos;
+
+      return threadMap.values.toList();
     } catch (e) {
       return [];
     }
   }
 
-  // ── Load messages for a thread ────────────────────────
-  Future<List<Message>> loadMessages(String threadId) async {
+  Future<List<Message>> loadMessages(String address) async {
     try {
-      // Inbox messages
       final inbox = await telephony.getInboxSms(
-        filter: SmsFilter.where(SmsColumn.THREAD_ID).equals(threadId),
+        filter: SmsFilter.where(SmsColumn.ADDRESS).equals(address),
         sortOrder: [OrderBy(SmsColumn.DATE, sort: Sort.ASC)],
       );
-
-      // Sent messages
       final sent = await telephony.getSentSms(
-        filter: SmsFilter.where(SmsColumn.THREAD_ID).equals(threadId),
+        filter: SmsFilter.where(SmsColumn.ADDRESS).equals(address),
         sortOrder: [OrderBy(SmsColumn.DATE, sort: Sort.ASC)],
       );
 
       List<Message> messages = [];
-
       for (final sms in inbox) {
         messages.add(Message(
           id: sms.id?.toString() ?? '',
@@ -78,10 +90,9 @@ class SmsService {
           address: sms.address ?? '',
           date: DateTime.fromMillisecondsSinceEpoch(sms.date ?? 0),
           isSent: false,
-          isRead: sms.read == SmsReadStatus.READ,
+          isRead: (sms.read ?? 0) == 1,
         ));
       }
-
       for (final sms in sent) {
         messages.add(Message(
           id: sms.id?.toString() ?? '',
@@ -93,7 +104,6 @@ class SmsService {
         ));
       }
 
-      // Sort by date
       messages.sort((a, b) => a.date.compareTo(b.date));
       return messages;
     } catch (e) {
@@ -101,37 +111,18 @@ class SmsService {
     }
   }
 
-  // ── Send SMS ──────────────────────────────────────────
   Future<bool> sendSms({
     required String to,
     required String message,
   }) async {
     try {
-      await telephony.sendSms(
-        to: to,
-        message: message,
-        statusListener: (status) {
-          // SmsSendStatus.SENT / DELIVERED
-        },
-      );
+      await telephony.sendSms(to: to, message: message);
       return true;
     } catch (e) {
       return false;
     }
   }
 
-  // ── Mark as read ──────────────────────────────────────
-  Future<void> markAsRead(String threadId) async {
-    // Uses Android ContentResolver
-    await telephony.requestSmsPermissions;
-  }
-
-  // ── Delete conversation ───────────────────────────────
-  Future<void> deleteThread(String threadId) async {
-    // Requires WRITE_SMS permission
-  }
-
-  // ── Listen for new SMS ────────────────────────────────
   void listenForIncomingSms({
     required Function(SmsMessage) onMessage,
   }) {
@@ -142,7 +133,4 @@ class SmsService {
   }
 }
 
-// Background handler (top-level function required by telephony)
-void backgroundMessageHandler(SmsMessage message) {
-  // Handle background SMS
-}
+void backgroundMessageHandler(SmsMessage message) {}

@@ -9,11 +9,7 @@ workflows:
       - name: Get packages
         script: flutter pub get
       - name: Build APK
-        script: |
-          cd android
-          chmod +x gradlew
-          cd ..
-          flutter build apk --release --no-tree-shake-icons
+        script: flutter build apk --release --no-tree-shake-icons
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
     publishing:

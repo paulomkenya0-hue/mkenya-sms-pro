@@ -6,24 +6,24 @@ plugins {
 
 android {
     namespace "com.paulomkenya.mkenyasmspro"
-    compileSdk flutter.compileSdkVersion
-    ndkVersion flutter.ndkVersion
+    compileSdk 34
+    ndkVersion "25.1.8937393"
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
     }
 
     defaultConfig {
         applicationId "com.paulomkenya.mkenyasmspro"
-        minSdkVersion 21
-        targetSdkVersion flutter.targetSdkVersion
-        versionCode flutter.versionCode
-        versionName flutter.versionName
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
         multiDexEnabled true
     }
 
@@ -37,11 +37,10 @@ android {
 }
 
 flutter {
-    source '../..'
+    source "../.."
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.0"
     implementation 'androidx.multidex:multidex:2.0.1'
-    implementation 'androidx.biometric:biometric:1.2.0-alpha05'
 }

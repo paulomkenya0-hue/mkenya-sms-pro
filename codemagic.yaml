@@ -1,0 +1,21 @@
+workflows:
+  android-release:
+    name: Mkenya SMS Pro Build
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      java: 17
+    scripts:
+      - name: Get packages
+        script: flutter pub get
+      - name: Build APK
+        script: flutter build apk --release --no-tree-shake-icons
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
+    publishing:
+      email:
+        recipients:
+          - paulomkenya0@gmail.com
+        notify:
+          success: true
+          failure: true
